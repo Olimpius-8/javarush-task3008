@@ -16,6 +16,26 @@ public class Server {
             this.socket = socket;
         }
 
+        public void run() {
+            //System.out.println(socket.getRemoteSocketAddress());
+            ConsoleHelper.writeMessage("Established connection with: " + socket.getRemoteSocketAddress());
+            String username = null;
+            try (Connection connection = new Connection(socket)){
+                username = serverHandshake(connection);
+                sendBroadcastMessage(new Message(MessageType.USER_ADDED, username));
+                notifyUsers(connection, username);
+                serverMainLoop(connection, username);
+            }catch (IOException e){
+                System.out.println("Enter incorrect value ");
+            }catch (ClassNotFoundException e){
+                System.out.println("Class object not found");
+            }
+            if(username!=null) {
+                sendBroadcastMessage(new Message(MessageType.USER_REMOVED, username));
+                connectionMap.remove(username);
+            }
+        }
+
         private void serverMainLoop(Connection connection, String username) throws IOException, ClassNotFoundException {
             while (true){
                 Message message = connection.receive();
